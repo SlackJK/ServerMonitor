@@ -3,13 +3,16 @@ from dash import Dash, html, dcc
 from dash.dependencies import Input, Output
 import plotly.express as px
 
+
+# TODO show things on mouse hover
+
 df = pd.read_csv(r"test_cpu_data.csv")
 fig = px.line(df, x="time", y="cpu_temp")
 
 
 app = Dash(__name__)
 app.layout = html.Div(children=[
-    html.H1(children="Hello world"),
+    html.H1(children="My Dashboard"),
     dcc.Graph(
         id="my_graph",
         figure=fig
@@ -25,6 +28,7 @@ app.layout = html.Div(children=[
 @app.callback(Output("my_graph", "figure"),
               Input("interval_component", "n_intervals"))
 def update_graph(n):
+    global df
     df = pd.read_csv(r"test_cpu_data.csv")
     fig = px.line(df, x="time", y="cpu_temp")
     return fig
