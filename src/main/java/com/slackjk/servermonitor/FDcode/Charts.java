@@ -8,12 +8,15 @@ import com.github.appreciated.apexcharts.config.chart.animations.DynamicAnimatio
 import com.github.appreciated.apexcharts.config.chart.animations.Easing;
 import com.github.appreciated.apexcharts.config.chart.animations.builder.DynamicAnimationBuilder;
 import com.github.appreciated.apexcharts.config.chart.builder.AnimationsBuilder;
+import com.github.appreciated.apexcharts.config.chart.builder.ToolbarBuilder;
 import com.github.appreciated.apexcharts.config.chart.builder.ZoomBuilder;
 import com.github.appreciated.apexcharts.config.legend.HorizontalAlign;
 
+import com.github.appreciated.apexcharts.config.series.SeriesType;
 import com.github.appreciated.apexcharts.config.stroke.Curve;
 import com.github.appreciated.apexcharts.config.subtitle.Align;
 import com.github.appreciated.apexcharts.config.xaxis.XAxisType;
+import com.github.appreciated.apexcharts.config.xaxis.builder.LabelsBuilder;
 import com.github.appreciated.apexcharts.helper.Series;
 import com.vaadin.flow.component.html.Div;
 
@@ -23,8 +26,22 @@ import java.util.stream.IntStream;
 
 public class Charts
 {
+    // Credit https://github.com/rucko24/nodemcu-with-flow/blob/main/src/main/java/com/example/application/backend/services/charts/ApexChartService.java
+    public static final String CPUUSAGE = "Usage%";
+    private static final String FORMATTER_TIMESTAMP = "function (value, timestamp) {\n" +
+            "  var date = new Date(timestamp);" +
+            "  var hours = date.getHours();\n" +
+            "  var minutes = date.getMinutes();\n" +
+            "  var seconds = date.getSeconds();" +
+            "  var ampm = hours >= 12 ? 'pm' : 'am';\n" +
+            "  hours = hours % 12;\n" +
+            "  hours = hours ? hours : 12; // the hour '0' should be '12'\n" +
+            "  minutes = minutes < 10 ? '0'+minutes : minutes;\n" +
+            "  return hours + ':' + minutes + ':' + ('0'+seconds).slice(-2) + ' ' + ampm;\n" +
+            "}";
     public ApexCharts CpuUsage(Series Usage, List Time)
     {
+        /*
         return ApexChartsBuilder.get()
                 .withChart(ChartBuilder.get()
                         .withId("realtime")
@@ -33,7 +50,7 @@ public class Charts
                                 .withEnabled(true)
                                 .withEasing(Easing.linear)
                                 .withDynamicAnimation(DynamicAnimationBuilder.get()
-                                        .withSpeed(1000)
+                                        .withSpeed(100)
                                         .build())
                                 .build())
                         .withZoom(ZoomBuilder.get()
@@ -44,20 +61,54 @@ public class Charts
                         .withEnabled(false)
                         .build())
                 .withStroke(StrokeBuilder.get().withCurve(Curve.straight).build())
-                .withSeries(Usage)
                 .withTitle(TitleSubtitleBuilder.get()
                         .withText("CPU Usage")
                         .withAlign(Align.left).build())
                 .withSubtitle(TitleSubtitleBuilder.get()
                         .withText("% each second")
                         .withAlign(Align.left).build())
-                .withLabels(IntStream.range(1, 10).boxed().map(day -> LocalDate.of(2000, 1, day).toString()).toArray(String[]::new))
+                .withDataLabels(DataLabelsBuilder
+                        .get()
+                        .withEnabled(false)
+                        .build())
                 .withXaxis(XAxisBuilder.get()
-                        .withCategories(Time)
+                        .withRange(100.0)
                         .build())
                 .withYaxis(YAxisBuilder.get()
-                        .withOpposite(true).withMax(100).build())
+                        .withOpposite(false).withMax(100).build())
                 .withLegend(LegendBuilder.get().withHorizontalAlign(HorizontalAlign.left).build())
+                .withSeries(new Series<>(CPUUSAGE, SeriesType.line,Usage))
+                .build();
+
+         */
+        return ApexChartsBuilder.get().withChart(ChartBuilder.get()
+                        .withType(Type.line)
+                        .withAnimations(AnimationsBuilder.get()
+                                .withEnabled(true)
+                                .withEasing(Easing.linear)
+                                .withDynamicAnimation(DynamicAnimationBuilder.get()
+                                        .withSpeed(1000)
+                                        .build())
+                                .build())
+                        .withToolbar(ToolbarBuilder.get().withShow(false).build())
+                        .withZoom(ZoomBuilder.get().withEnabled(false).build())
+                        .build())
+                .withDataLabels(DataLabelsBuilder.get()
+                        .withEnabled(false)
+                        .build())
+                .withXaxis(XAxisBuilder.get()
+                        .withType(XAxisType.datetime)
+                        .withLabels(LabelsBuilder.get()
+                                .withFormatter(FORMATTER_TIMESTAMP)
+                                .withShowDuplicates(false)
+                                //.withRotateAlways(true)
+                                .withShow(true)
+                                .build())
+                        .withRange(10000.0)//todo testme
+                        .build())
+                .withYaxis(YAxisBuilder.get()
+                        .withOpposite(false).withMax(100).withMin(0.0).build())
+                .withSeries(new Series<>(0))
                 .build();
     }
 }

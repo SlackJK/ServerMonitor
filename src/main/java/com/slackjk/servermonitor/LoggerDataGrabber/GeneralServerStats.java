@@ -1,6 +1,7 @@
 package com.slackjk.servermonitor.LoggerDataGrabber;
 
 import com.github.appreciated.apexcharts.ApexCharts;
+import com.github.appreciated.apexcharts.helper.Coordinate;
 import com.github.appreciated.apexcharts.helper.Series;
 import com.sun.management.OperatingSystemMXBean;
 import org.influxdb.dto.BatchPoints;
@@ -10,10 +11,7 @@ import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -22,11 +20,13 @@ public class GeneralServerStats
     //ServerStatsThroughSQL SSTS = new ServerStatsThroughSQL();
 
     OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-    public Series cpuUsage = new Series<>();
+    public List cpuUsage = new ArrayList<>();
+    public List memUsage = new ArrayList<>();
     public List<String> Time = new ArrayList<>();
-    private int cpuUsageBlockSize = 10;
-    private int memUsageBlockSize = 10;
+    private int cpuUsageBlockSize = 100;
+    private int memUsageBlockSize = 100;
     public GeneralServerStats() throws InterruptedException {
+        /*
         Thread thread1 = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -38,32 +38,32 @@ public class GeneralServerStats
             }
         });
         thread1.start();
+
+         */
     }
-    private void getResourceLoad(long Milliseconds) throws InterruptedException//Only use this method if multithreading
+    public Coordinate getResourceLoad() throws InterruptedException//Only use this method if multithreading
     {
-        ArrayList cpu = new ArrayList<>();
-        ArrayList mem = new ArrayList<>();
-        while(true)
-        {
-            cpu.add(operatingSystemMXBean.getSystemCpuLoad());
-            if(cpu.size()>=cpuUsageBlockSize)
+
+            return new Coordinate(System.currentTimeMillis(),((int)(operatingSystemMXBean.getSystemCpuLoad()*10000))/100.0);
+            /*
+            if(cpuUsage.size()>=cpuUsageBlockSize)
             {
-                cpuUsage.setData(cpu.toArray());
-                cpu = new ArrayList<>();
+                cpuUsage.remove(0);
             }
-            mem.add(getMemoryLoad());
-            if(mem.size()>=memUsageBlockSize)
+            memUsage.add(getMemoryLoad());
+            if(memUsage.size()>=memUsageBlockSize)
             {
-                cpuUsage.setData(cpu.toArray());
-                mem = new ArrayList<>();
+                memUsage.remove(0);
             }
             Time.add(String.valueOf(Instant.now().getEpochSecond()));
             if(Time.size()>=cpuUsageBlockSize)
             {
-                Time = new ArrayList<>();
+                Time.remove(0);
             }
             TimeUnit.MILLISECONDS.sleep(Milliseconds);
-        }
+
+             */
+
     }
     private long getMemoryLoad()
     {
@@ -82,13 +82,5 @@ public class GeneralServerStats
         String os_version = properties.getProperty("os.version");
         String java_version = properties.getProperty("java.version");
 
-    }
-    public Series updateCPULoad(Series previousCPUUsage, ApexCharts chart)
-    {
-        if(cpuUsage.getData().equals(previousCPUUsage.getData()))
-        {
-            chart.updateSeries(cpuUsage);
-        }
-        return cpuUsage;
     }
 }

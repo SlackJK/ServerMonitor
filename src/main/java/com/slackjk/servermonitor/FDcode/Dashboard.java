@@ -1,12 +1,15 @@
 package com.slackjk.servermonitor.FDcode;
 
 import com.github.appreciated.apexcharts.ApexCharts;
+import com.github.appreciated.apexcharts.helper.Coordinate;
 import com.github.appreciated.apexcharts.helper.Series;
 import com.slackjk.servermonitor.LoggerDataGrabber.GeneralServerStats;
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -20,9 +23,17 @@ import com.vaadin.flow.theme.lumo.Lumo;
 import org.springframework.web.context.WebApplicationContext;
 
 
+
 import javax.annotation.security.PermitAll;
+import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.sql.Time;
-import java.util.List;
+import java.time.Duration;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -36,7 +47,10 @@ public class Dashboard extends VerticalLayout
     private static double tabScreenCoverage = 0.7;//between 0 and 1
     private static double sideBarScreenCoverage = 0.3;//between 0 and 1
     Charts charts = new Charts();
+
+    ApexCharts chart;
     GeneralServerStats GSS = new GeneralServerStats();
+    Series cpuUsage = new Series<>(GSS.cpuUsage.toArray());
     public Dashboard() throws InterruptedException {
 
         TimeUnit.SECONDS.sleep(1);
@@ -59,20 +73,101 @@ public class Dashboard extends VerticalLayout
         content.add(sideBar,pageContent);
 
         TimeUnit.SECONDS.sleep(10);
-        Series cpuUsage = GSS.cpuUsage;
+
         List<String> Time = GSS.Time;
-        ApexCharts chart = charts.CpuUsage(cpuUsage,Time);
+        chart = charts.CpuUsage(cpuUsage,Time);
         chart.setWidth("1500px");
 
         add(content,chart);
+
         /*
-        while (true)
-        {
-            cpuUsage = GSS.updateCPULoad(cpuUsage,chart);
-        }
+        Thread thread2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true)
+                {
+                    schedule.scheduleAtFixedRate(() -> {
+                        try {
+                            final CompletableFuture<String> cf = HttpClient
+                                    .newBuilder()
+                                    .build()
+                                    .sendAsync(HttpRequest
+                                                    .newBuilder(new URI(HUMIDITY))
+                                                    .GET()
+                                                    .version(HttpClient.Version.HTTP_2)
+                                                    .build(),
+                                            HttpResponse.BodyHandlers.ofString())
+                                    .thenApplyAsync(HttpResponse::body);
+                            cf.whenCompleteAsync((data, error) -> {
+                                        if (getUI().isEmpty()) return;
+                                        if (Objects.nonNull(error)) {
+                                            cf.completeExceptionally(error);
+                                            getUI().get().access(() -> {
+                                                Notification.show("Error: " + error);
+                                            });
+                                        } else {
+                                            if (getUI().isEmpty()) return;
+                                            getUI().get().access(() -> {
+
+                                                //chart.updateSeries(radomSeries[SECURE_RANDOM.nextInt(randomSeries .length)]);
+
+                                                chart.updateSeries(new Series<>(data));
+                                            });
+
+                                        }
+                                    }, EXEC)
+                                    .join();
+                        } catch (URISyntaxException e) {
+                            throw new RuntimeException();
+                        }
+                    }, 1, 1, TimeUnit.SECONDS);
+
+                }
+            }
+        });
+        thread2.start();
+        /* TODO try me
+
+
 
          */
+
+
     }
+    @Override
+    protected void onAttach(AttachEvent attachEvent)
+    {
+        super.onAttach(attachEvent);
+        ArrayList arrayList = new ArrayList<>();
+        arrayList.add(new Coordinate<>(System.currentTimeMillis(),0.0));
+        Thread thread2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true){
+                    getUI().get().access(()->{
+                                chart.updateSeries(new Series<>(arrayList.toArray()));
+                            }
+                    );
+                    try {
+
+                        arrayList.add(GSS.getResourceLoad());
+                        //System.out.println(arrayList);
+                        if(arrayList.size()>99)
+                            arrayList.remove(0);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
+        thread2.start();
+    }
+
     private Tabs createTabs()
     {
         return new Tabs(
