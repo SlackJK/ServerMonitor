@@ -3,6 +3,8 @@ package com.slackjk.servermonitor.LoggerDataGrabber;
 import com.github.appreciated.apexcharts.ApexCharts;
 import com.github.appreciated.apexcharts.helper.Coordinate;
 import com.github.appreciated.apexcharts.helper.Series;
+import com.profesorfalken.jsensors.JSensors;
+import com.profesorfalken.jsensors.model.components.Components;
 import com.sun.management.OperatingSystemMXBean;
 import org.influxdb.dto.BatchPoints;
 
@@ -19,7 +21,7 @@ public class GeneralServerStats
 {
     //ServerStatsThroughSQL SSTS = new ServerStatsThroughSQL();
 
-    OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+    static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
     public List cpuUsage = new ArrayList<>();
     public List memUsage = new ArrayList<>();
     public List<String> Time = new ArrayList<>();
@@ -41,7 +43,7 @@ public class GeneralServerStats
 
          */
     }
-    public Coordinate getResourceLoad() throws InterruptedException//Only use this method if multithreading
+    public Coordinate getCPULoad()
     {
 
             return new Coordinate(System.currentTimeMillis(),((int)(operatingSystemMXBean.getSystemCpuLoad()*10000))/100.0);
@@ -65,9 +67,17 @@ public class GeneralServerStats
              */
 
     }
-    private long getMemoryLoad()
+    public Coordinate getMemoryLoad()
     {
-        return operatingSystemMXBean.getTotalPhysicalMemorySize()-operatingSystemMXBean.getFreePhysicalMemorySize();
+        return new Coordinate<>(System.currentTimeMillis(),(operatingSystemMXBean.getTotalPhysicalMemorySize()-operatingSystemMXBean.getFreePhysicalMemorySize())/1000000);
+    }
+    public double getCPUUsage()
+    {
+        return (((int)(operatingSystemMXBean.getSystemCpuLoad()*10000))/100.0);
+    }
+    public static long getTotalRam()
+    {
+       return operatingSystemMXBean.getTotalPhysicalMemorySize()/1000000;
     }
     public void getSystemHardwareStatistics() throws IOException//linux only
     {
@@ -82,5 +92,9 @@ public class GeneralServerStats
         String os_version = properties.getProperty("os.version");
         String java_version = properties.getProperty("java.version");
 
+    }
+    public void getCPUTemp()
+    {
+        JSensors.get.components().cpus.forEach(cpu -> cpu.sensors.temperatures.forEach(temperature -> System.out.println(temperature.value)));
     }
 }

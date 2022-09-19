@@ -35,6 +35,7 @@ import java.sql.Time;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 
@@ -48,7 +49,9 @@ public class Dashboard extends VerticalLayout
     private static double sideBarScreenCoverage = 0.3;//between 0 and 1
     Charts charts = new Charts();
 
-    ApexCharts chart;
+    ApexCharts cpuChart;
+    ApexCharts ramChart;
+    ApexCharts cpuGuageChart;
     GeneralServerStats GSS = new GeneralServerStats();
     Series cpuUsage = new Series<>(GSS.cpuUsage.toArray());
     public Dashboard() throws InterruptedException {
@@ -74,11 +77,16 @@ public class Dashboard extends VerticalLayout
 
         TimeUnit.SECONDS.sleep(10);
 
-        List<String> Time = GSS.Time;
-        chart = charts.CpuUsage(cpuUsage,Time);
-        chart.setWidth("1500px");
+        cpuChart = charts.CpuUsage();
+        cpuChart.setWidth("700px");
 
-        add(content,chart);
+        cpuGuageChart = charts.cpuUsageGuage();
+        cpuGuageChart.setWidth("700px");
+
+        ramChart = charts.RamUsage();
+        ramChart.setWidth("700px");
+
+        add(content,cpuGuageChart,cpuChart,ramChart);
 
         /*
         Thread thread2 = new Thread(new Runnable() {
@@ -138,34 +146,50 @@ public class Dashboard extends VerticalLayout
     protected void onAttach(AttachEvent attachEvent)
     {
         super.onAttach(attachEvent);
-        ArrayList arrayList = new ArrayList<>();
-        arrayList.add(new Coordinate<>(System.currentTimeMillis(),0.0));
-        Thread thread2 = new Thread(new Runnable() {
+        ArrayList<Thread> chartThreads = new ArrayList<>();//todo maybe threadpool
+        chartThreads.add(new Thread(new Runnable() {
             @Override
-            public void run() {
-                while (true){
-                    getUI().get().access(()->{
-                                chart.updateSeries(new Series<>(arrayList.toArray()));
-                            }
-                    );
-                    try {
+            public void run()
+            {
+                ArrayList cpuUsageData = new ArrayList<>();
+                cpuUsageData.add(new Coordinate<>(System.currentTimeMillis(),0.0));
+                while (true)
+                {
+                    cpuUsageData = updateChart(cpuChart,cpuUsageData,GSS.getCPULoad(),100,1000);
+                }
+            }
+        }));
+        chartThreads.add(new Thread(new Runnable() {
+            @Override
+            public void run()
+            {
+                ArrayList ramUsageData = new ArrayList<>();
+                ramUsageData.add(new Coordinate<>(System.currentTimeMillis(),0));
+                while (true)
+                {
+                    ramUsageData = updateChart(ramChart,ramUsageData,GSS.getMemoryLoad(),100,1000);
+                }
+            }
+        }));
+        chartThreads.add(new Thread(new Runnable() {
+            @Override
+            public void run()
+            {
 
-                        arrayList.add(GSS.getResourceLoad());
-                        //System.out.println(arrayList);
-                        if(arrayList.size()>99)
-                            arrayList.remove(0);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+                while (true)
+                {
+                    getUI().get().access(()->{
+                        cpuGuageChart.updateSeries(GSS.getCPUUsage());
+                    });
                     try {
-                        TimeUnit.MILLISECONDS.sleep(1000);
+                        TimeUnit.MILLISECONDS.sleep(750);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
                 }
             }
-        });
-        thread2.start();
+        }));
+        chartThreads.forEach(element-> element.start());
     }
 
     private Tabs createTabs()
@@ -187,16 +211,25 @@ public class Dashboard extends VerticalLayout
             }
         });
     }
-    private static void setResolution()
+    public ArrayList updateChart(ApexCharts chart, ArrayList data,Coordinate newData,int sizeLimit,int waitTime)
     {
-        while (true)
-        {
-
+        getUI().get().access(()->{
+                    chart.updateSeries(new Series<>(data.toArray()));
+                }
+        );
+        try {
+            data.add(newData);
+            TimeUnit.MILLISECONDS.sleep(waitTime);
         }
-    }
-    public static void getResolution()
-    {
-        CompletableFuture x = CompletableFuture.supplyAsync(()->{setResolution();return null;});
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        if(data.size()>=sizeLimit)
+        {
+            data.remove(0);
+        }
+        return data;
     }
 
 }

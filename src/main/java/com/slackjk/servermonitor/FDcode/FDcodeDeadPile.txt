@@ -1,0 +1,36 @@
+DASHBOARD------------------------
+
+        Thread thread2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                ArrayList ramUsageData = new ArrayList<>();
+
+                ramUsageData.add(new Coordinate<>(System.currentTimeMillis(),0));
+                while (true){
+
+                    /*
+                    getUI().get().access(()->{
+                                chart.updateSeries(new Series<>(arrayList.toArray()));
+                            }
+                    );
+                    try {
+
+                        arrayList.add(GSS.getResourceLoad());
+                        //System.out.println(arrayList);
+                        if(arrayList.size()>99)
+                            arrayList.remove(0);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                     */
+                }
+            }
+        });
+        thread2.start();
