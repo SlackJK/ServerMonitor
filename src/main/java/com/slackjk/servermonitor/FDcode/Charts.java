@@ -222,4 +222,83 @@ public class Charts
 
 
     }
+    public ApexCharts tempAndFanGuage(String label)
+    {
+        /*
+                return ApexChartsBuilder.get()
+                        .withChart(ChartBuilder.get()
+                                .withType(Type.radialBar)
+                                .build())
+                        .withPlotOptions(PlotOptionsBuilder.get()
+                                .withRadialBar(RadialBarBuilder.get()
+                                        .withHollow(HollowBuilder.get()
+                                                .withSize("50%")
+                                                .build())
+                                        .build())
+                                .build())
+                        .withSeries(60.0)
+                        .withLabels("Cricket")
+                        .build();
+
+         */
+
+
+
+        return ApexChartsBuilder.get()
+                .withChart(ChartBuilder.get()
+                        .withType(Type.radialBar)
+                        .withAnimations(AnimationsBuilder.get()
+                                .withEnabled(true)
+                                .withEasing(Easing.linear)
+                                .withDynamicAnimation(DynamicAnimationBuilder.get()
+                                        .withSpeed(10000)
+                                        .build())
+                                .build())
+                        .build())
+                .withPlotOptions(PlotOptionsBuilder.get()
+                        .withRadialBar(RadialBarBuilder.get()
+                                .withStartAngle(-90.0)
+                                .withEndAngle(90.0)
+                                .withTrack(TrackBuilder.get()
+                                        .withBackground("#e7e7e7")
+                                        .withStrokeWidth("97%")
+                                        .withMargin(15.0)
+                                        .withDropShadow(DropShadowBuilder.get()
+                                                .withEnabled(true)
+                                                .withTop(2.0)
+                                                .withLeft(0.0)
+                                                .withOpacity(1.0)
+                                                .withOpacity(2.0)
+                                                .build())
+                                        .build())
+                                .withHollow(HollowBuilder.get()
+                                        .withSize("50%")
+                                        .build())
+                                .build())
+                        .build())
+                .withDataLabels(DataLabelsBuilder.get()
+                        .withFormatter("function (val)" +
+                                "{" +
+                                "var out = val+'c';" +
+                                "return out;" +
+                                "}")
+                        .build())
+                .withFill(FillBuilder.get()
+                        .withType("gradient")
+                        .withGradient(GradientBuilder.get()
+                                .withShade("light")
+                                .withShadeIntensity(0.4)
+                                .withInverseColors(false)
+                                .withOpacityFrom(1.0)
+                                .withOpacityTo(1.0)
+                                .withStops(new ArrayList<>(Arrays.asList(0.0, 50.0, 53.0, 91.0)))
+                                .build())
+                        .build())
+                .withSeries(0.0)
+                .withLabels(label)
+                .build();
+
+
+
+    }
 }

@@ -52,6 +52,18 @@ public class Dashboard extends VerticalLayout
     ApexCharts cpuChart;
     ApexCharts ramChart;
     ApexCharts cpuGuageChart;
+
+    ArrayList<ArrayList<ApexCharts>> tempAndFanCharts;
+
+    ApexCharts cpuTempChart;
+    ApexCharts cpuFanSpeedChart;
+    ApexCharts gpuTempChart;
+    ApexCharts gpuFanSpeedChart;
+    ApexCharts moboTempChart;
+    ApexCharts diskLoadChart;
+
+
+
     GeneralServerStats GSS = new GeneralServerStats();
     Series cpuUsage = new Series<>(GSS.cpuUsage.toArray());
     public Dashboard() throws InterruptedException {
@@ -61,6 +73,7 @@ public class Dashboard extends VerticalLayout
         VerticalLayout pageContent = new VerticalLayout();
         HorizontalLayout content = new HorizontalLayout();
         VerticalLayout sideBar= new VerticalLayout();
+        HorizontalLayout diagnosticGuages =new HorizontalLayout();
 
         Tabs x = createTabs();
         int xwidth = (int) (resolution*tabScreenCoverage);
@@ -77,6 +90,9 @@ public class Dashboard extends VerticalLayout
 
         TimeUnit.SECONDS.sleep(10);
 
+        ArrayList<String> chartLabels = new ArrayList<>(Arrays.asList("CPU Temp","CPU Fan Speed","GPU Temp","GPU Fan Speed","Motherboard Temp"));//,"Disk Load"
+        tempAndFanCharts = createTemperatureCharts(chartLabels);
+
         cpuChart = charts.CpuUsage();
         cpuChart.setWidth("700px");
 
@@ -86,7 +102,13 @@ public class Dashboard extends VerticalLayout
         ramChart = charts.RamUsage();
         ramChart.setWidth("700px");
 
-        add(content,cpuGuageChart,cpuChart,ramChart);
+        gpuTempChart = charts.tempAndFanGuage("GPU temp");
+
+
+        tempAndFanCharts.forEach(chartArray->chartArray.forEach(chart-> diagnosticGuages.add(chart)));
+
+        add(content,cpuGuageChart,cpuChart,ramChart,diagnosticGuages);
+
 
         /*
         Thread thread2 = new Thread(new Runnable() {
@@ -189,6 +211,7 @@ public class Dashboard extends VerticalLayout
                 }
             }
         }));
+        manageTemperatureCharts(tempAndFanCharts);
         chartThreads.forEach(element-> element.start());
     }
 
@@ -211,6 +234,103 @@ public class Dashboard extends VerticalLayout
             }
         });
     }
+    private ArrayList<ArrayList<ApexCharts>> createTemperatureCharts(ArrayList<String> Names)
+    {
+        ArrayList<ArrayList<ApexCharts>> out = new ArrayList<>();
+        ArrayList<ArrayList> Stats = new ArrayList<>();
+        Stats.add(GSS.getCPUTemp());
+        Stats.add(GSS.getCPUFanSpeed());
+        Stats.add(GSS.getGPUTemp());
+        Stats.add(GSS.getGPUFanSpeed());
+        Stats.add(GSS.getMoboTemp());
+        //Stats.add(GSS.getDiskLoad());
+        for (int i = 0; i < Stats.size(); i++)
+        {
+            ArrayList<ApexCharts> chartCategory = new ArrayList<>();
+            for (int j = 0; j < Stats.get(i).size(); j++)
+            {
+                chartCategory.add(charts.tempAndFanGuage(Names.get(i)));
+            }
+            out.add(chartCategory);
+        }
+        return out;
+    }
+
+    private void manageTemperatureCharts(ArrayList<ArrayList<ApexCharts>> temperatureCharts)//todo no need for 3d arraylist cause the data is for a guage
+    {
+        /*
+        ArrayList<ArrayList<ArrayList>> Update = new ArrayList<>();
+        ArrayList<ArrayList> Stats = new ArrayList<>();
+        Stats.add(GSS.getCPUTemp());
+        Stats.add(GSS.getCPUFanSpeed());
+        Stats.add(GSS.getGPUTemp());
+        Stats.add(GSS.getGPUFanSpeed());
+        Stats.add(GSS.getMoboTemp());
+        Stats.add(GSS.getDiskLoad());
+
+        for (int i = 0; i < Stats.size(); i++)
+        {
+            ArrayList<ArrayList> prepUpdate = new ArrayList<>();
+            for (int j = 0; j < Stats.get(i).size(); j++)
+            {
+                prepUpdate.add(new ArrayList<>(Arrays.asList(Stats.get(i).get(j))));
+                //if()
+                /*
+                if(Stats.get(i).get(j).size()>0)
+                {
+                    Update.get(i).add(Stats.get(i).get(j).get(0));
+                    int finalI = i;
+                    int finalJ = j;
+                    getUI().get().access(() ->
+                    {
+                        temperatureCharts.get(finalI).get(finalJ).updateSeries(new Series<>(Update.toArray()));
+                    });
+                }
+                if(Update.get(i).size()>100)
+                {
+                    Update.get(i).remove(0);
+                }
+
+
+            }
+            Update.add(prepUpdate);
+        }
+        */
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    ArrayList<ArrayList<Double>> Stats = new ArrayList<>();
+                    Stats.add(GSS.getCPUTemp());
+                    Stats.add(GSS.getCPUFanSpeed());
+                    Stats.add(GSS.getGPUTemp());
+                    Stats.add(GSS.getGPUFanSpeed());
+                    Stats.add(GSS.getMoboTemp());
+                    //Stats.add(GSS.getDiskLoad());
+                    for (int i = 0; i < Stats.size(); i++) 
+                    {
+                        for (int j = 0; j < Stats.get(i).size(); j++)
+                        {
+                            int finalI = i;
+                            int finalJ = j;
+                            getUI().get().access(()->{
+                                temperatureCharts.get(finalI).get(finalJ).updateSeries(Stats.get(finalI).get(finalJ));
+                            });
+
+                        }   
+                    }
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
+        thread.start();
+
+    }
+
     public ArrayList updateChart(ApexCharts chart, ArrayList data,Coordinate newData,int sizeLimit,int waitTime)
     {
         getUI().get().access(()->{

@@ -93,8 +93,55 @@ public class GeneralServerStats
         String java_version = properties.getProperty("java.version");
 
     }
-    public void getCPUTemp()
+    //think about 2d as u need to store the cooordinates series for each group
+    public ArrayList<Double> getCPUTemp()//todo add fan speed and temp measurements
     {
-        JSensors.get.components().cpus.forEach(cpu -> cpu.sensors.temperatures.forEach(temperature -> System.out.println(temperature.value)));
+        ArrayList<Double> out = new ArrayList<>();
+        JSensors.get.components().cpus.forEach(cpu -> cpu.sensors.temperatures
+                .forEach(temperature ->
+                        out.add(temperature.value)));
+        return out;
     }
+    public ArrayList<Double> getCPUFanSpeed()//todo add fan speed and temp measurements
+    {
+        ArrayList<Double> out = new ArrayList<>();
+        JSensors.get.components().cpus.forEach(cpu -> cpu.sensors.fans
+                .forEach(fan ->
+                        out.add(fan.value)));
+        return out;
+    }
+    public ArrayList<Double> getGPUTemp()//todo add fan speed and temp measurements
+    {
+        ArrayList<Double> out = new ArrayList<>();
+        JSensors.get.components().gpus.forEach(gpu -> gpu.sensors.temperatures
+                .forEach(temperature ->
+                        out.add(temperature.value)));
+        return out;
+    }
+    public ArrayList<Double> getGPUFanSpeed()//todo add fan speed and temp measurements
+    {
+        ArrayList<Double> out = new ArrayList<>();
+        JSensors.get.components().gpus.forEach(gpu -> gpu.sensors.fans
+                .forEach(fan ->
+                        out.add(fan.value)));
+        return out;
+    }
+
+    public ArrayList<Double> getMoboTemp()//todo add fan speed and temp measurements
+    {
+        ArrayList<Double> out = new ArrayList<>();
+        JSensors.get.components().mobos.forEach(mobo -> mobo.sensors.temperatures
+                .forEach(temperature ->
+                        out.add(temperature.value)));
+        return out;
+    }
+    public ArrayList<Double> getDiskLoad()//todo add fan speed and temp measurements
+    {
+        ArrayList<Double> out = new ArrayList<>();
+        JSensors.get.components().disks.forEach(disk -> disk.sensors.loads
+                .forEach(load ->
+                        out.add(load.value)));
+        return out;
+    }
+
 }
